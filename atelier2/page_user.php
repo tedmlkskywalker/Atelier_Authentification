@@ -1,8 +1,13 @@
 <?php
 session_start();
 
-// Vérifier que l'utilisateur est bien "user"
-if (!isset($_COOKIE['authToken'], $_COOKIE['username']) || $_COOKIE['username'] !== 'user') {
+// Vérifier le cookie + le rôle "user"
+if (
+    empty($_COOKIE['authToken']) 
+    empty($_SESSION['authToken']) 
+    $_COOKIE['authToken'] !== $_SESSION['authToken'] ||
+    ($_SESSION['role'] ?? '') !== 'user'
+) {
     header('Location: index.php');
     exit();
 }
@@ -11,12 +16,17 @@ if (!isset($_COOKIE['authToken'], $_COOKIE['username']) || $_COOKIE['username'] 
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Page Utilisateur</title>
+    <title>Page USER</title>
 </head>
 <body>
-    <h1>Bienvenue sur la page Utilisateur (Atelier 2)</h1>
-    <p>Vous êtes connecté en tant que : <strong>user</strong>.</p>
+    <h1>Bienvenue sur la page USER</h1>
+    <p>Vous êtes connecté en tant que <strong>user</strong> (mot de passe : <strong>utilisateur</strong>). Le cookie est valable 1 minute.</p>
 
-    <a href="logout.php">Se déconnecter</a>
+    <p><a href="logout.php">Se déconnecter</a></p>
 </body>
 </html>
+﻿
+Karminho
+.karma74
+ 
+ 
