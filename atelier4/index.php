@@ -1,96 +1,94 @@
 <?php
 // Atelier 4 : Authentification simple via le header HTTP (Basic Auth)
 
-/**
- * Étape 1 : vérifier si le navigateur a envoyé des identifiants.
- * S'il n'y a rien, on demande une authentification.
- */
-if (!isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'])) {
-    demander_authentification();
-}
-
-// Récupérer l'utilisateur et le mot de passe envoyés par le navigateur
-$user = $_SERVER['PHP_AUTH_USER'];
-$pass = $_SERVER['PHP_AUTH_PW'];
-
-// Déterminer le rôle de l'utilisateur en fonction des identifiants
-$role = null;
-
-// Profil admin : admin / secret
-if ($user === 'admin' && $pass === 'secret') {
-    $role = 'admin';
-
-// Profil user : user / utilisateur
-} elseif ($user === 'user' && $pass === 'utilisateur') {
-    $role = 'user';
-}
-
-// Si les identifiants ne correspondent à aucun profil valide
-if ($role === null) {
-    demander_authentification();
-}
-
-/**
- * Fonction pour renvoyer une demande d'authentification au navigateur
- * et arrêter le script.
- */
-function demander_authentification(): void {
-    header('WWW-Authenticate: Basic realm="Atelier 4 - Authentification requise"');
+// 1. Fonction qui demande l'authentification au navigateur
+function demander_auth() {
+    header('WWW-Authenticate: Basic realm="Atelier 4 - Zone protégée"');
     header('HTTP/1.0 401 Unauthorized');
-    echo "<h1>Authentification requise</h1>";
-    echo "<p>Vous devez vous authentifier pour accéder à cette page.</p>";
-    exit;
+    echo "Accès refusé. Veuillez actualiser la page et entrer vos identifiants.";
+    exit();
 }
+
+// 2. Gestion du "logout" (forcer le navigateur à redemander les identifiants)
+if (isset($_GET['logout'])) {
+    demander_auth();
+}
+
+// 3. Vérifier que le navigateur a bien envoyé des identifiants
+if (!isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'])) {
+    demander_auth();
+}
+
+$username = $_SERVER['PHP_AUTH_USER'];
+$password = $_SERVER['PHP_AUTH_PW'];
+
+// 4. Vérifier si c'est un user ou un admin
+$isAdmin = false;
+$isUser  = false;
+
+// Profil admin
+if ($username === 'admin' && $password === 'secret') {
+    $isAdmin = true;
+}
+
+// Profil user
+if ($username === 'user' && $password === 'utilisateur') {
+    $isUser = true;
+}
+
+// Si ce n'est ni admin ni user => on redemande les identifiants
+if (!$isAdmin && !$isUser) {
+    demander_auth();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Atelier 4 – Authentification HTTP</title>
+    <title>Atelier 4 - Authentification par header HTTP</title>
 </head>
 <body>
-
-    <h1>Atelier 4 : Authentification simple via le header HTTP</h1>
+    <h1>Atelier 4 : Authentification via le header HTTP (Basic Auth)</h1>
 
     <p>
         Vous êtes connecté en tant que :
-        <strong><?php echo htmlspecialchars($user); ?></strong>
-        (rôle : <strong><?php echo htmlspecialchars($role); ?></strong>)
+        <strong><?= htmlspecialchars($username) ?></strong>
+        (profil <?= $isAdmin ? 'ADMIN' : 'USER' ?>).
     </p>
 
     <hr>
 
-    <h2>Section visible par tous les utilisateurs connectés</h2>
-    <p>
-        Cette partie est visible pour <strong>admin</strong> et pour <strong>user</strong>.
-    </p>
+    <h2>Contenu visible par tous les utilisateurs connectés</h2>
+    <p>Cette section est accessible à <strong>admin</strong> et à <strong>user</strong>.</p>
 
-    <?php if ($role === 'admin'): ?>
+    <?php if ($isAdmin): ?>
         <hr>
-        <h2>Section réservée à l'administrateur</h2>
+        <h2>Section réservée à l'ADMIN</h2>
         <p>
-            ⚠️ Cette section est visible <strong>uniquement</strong si vous êtes connecté en tant qu'<strong>admin</strong>.
+            Cette partie de la page n'est visible que si vous êtes connecté avec
+            le login <strong>admin</strong> et le mot de passe <strong>secret</strong>.
         </p>
         <ul>
-            <li>Accès aux paramètres sensibles</li>
-            <li>Gestion des utilisateurs</li>
-            <li>Statistiques avancées</li>
+            <li>Accès à des informations sensibles</li>
+            <li>Fonctionnalités de gestion</li>
+            <li>Vue complète des données</li>
         </ul>
-    <?php endif; ?>
-
-    <?php if ($role === 'user'): ?>
+    <?php else: ?>
         <hr>
-        <h2>Section spécifique à l'utilisateur simple</h2>
+        <h2>Section ADMIN non visible</h2>
         <p>
-            Vous êtes connecté en tant que <strong>user</strong>.  
-            Vous ne voyez pas la section administrateur.
+            Vous êtes connecté en tant que <strong>user</strong>.<br>
+            Cette section est uniquement visible pour le profil <strong>admin</strong>.
         </p>
     <?php endif; ?>
 
     <hr>
     <p>
-        Pour changer d'utilisateur, fermez la fenêtre privée ou effacez les identifiants (ou changez d'onglet privé).
+        <a href="?logout=1">Changer d'utilisateur (forcer une nouvelle authentification)</a>
     </p>
-
+    <p>
+        <em>Pensez à tester en navigation privée, comme demandé dans l'atelier.</em>
+    </p>
 </body>
 </html>
